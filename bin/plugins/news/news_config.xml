@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<config>
+  <database>
+     <mysql host ="192.168.1.4" 
+            port ="3306" 
+            user = "root" 
+            pass = "dataservice2015"  
+            name = "jindowin"/>
+
+     <mssql host = "migdb"
+            user = "web_Test"
+            pass = "9158com"
+            name = "WeiShow_new"/>
+
+     <hbase host = "222.73.34.92" 
+            port = "9090"
+            user = "root" 
+            pass = "nopass" 
+            name = "wk_detail" />
+
+  </database>
+  
+  <cached>
+     <redis host ="222.73.34.92"
+  		port ="6379"
+      pass = "kunyan"
+      name = "0"/>
+
+     <memcached>
+       <config host = "127.0.0.1" port="11211"/>
+     </memcached>
+   </cached>
+
+  <kafka>
+    <broker host = "192.168.1.4" 
+            port = "9092"
+            user = "nouser"
+            pass = "nopass"
+            name = "tianyiheng" />
+  </kafka> 
+
+</config>

@@ -1,0 +1,223 @@
+
+###############################################################################
+## 编译器
+COMPILER = g++
+COMPILERC = gcc
+
+## 编译选项
+## for debug -DROOM_DEBUG_MCACHE
+CPP_FLAG = -g -Wall -w -fPIC -c -D_LINUX -DDEBUG -D_DEBUG -D_REENTRANT -D_GNU_SOURCE -D__DEBUG_CORE__ -DFCGI_STD  #-DCHECK_HEADER-DTEST
+RCPP_FLAG = -g -Wall -w -fPIC -c -D_LINUX -DDEBUG -D_DEBUG -D_REENTRANT -D_GNU_SOURCE -DFCGI_STD #-DTEST
+## for release
+##CPP_FLAG = -O3 -Wall -s -w -fPIC -c -D_LINUX -DNDEBUG -D_REENTRANT -D_GNU_SOURCE -DFCGI_STD
+
+## 链接选项
+## for debug
+LINK_FLAGS = -g  -fPIC
+## for release
+## LINK_FLAGS = -s -O3 -shared -fPIC
+
+LIB_DIR = ./../../../library
+BASE_DIR = ./../pub
+## 头文件
+INCLUDE_PATHS = -I$(LIB_DIR)/public/ -I /usr/local/libmemcached-1.0.7/include\
+		-I/usr/local/lib -I$(LIB_DIR)/third_party/hiredis -I$(BASE_DIR)/\
+		-I$(LIB_DIR)/third_party/breakpad/src
+
+## 库
+LINK_PATHS =  -L/usr/local/libmemcached-1.0.7/lib/ -L/usr/lib64/mysql
+LINK_LIBRARYS = -lmemcached -lmemcachedutil -lrt -lpthread  -liconv -lfcgi -lmysqlclient -lexpat -lcurl\
+					$(LIB_DIR)/lib/libbreakpad_client.a $(LIB_DIR)/lib/libhiredis.a $(LINK_CORE_PATH)
+
+# 编译
+COMPILE = $(COMPILER) $(CPP_FLAG) $(INCLUDE_PATHS) -o $@
+RCOMPILE = $(COMPILER) $(RCPP_FLAG) $(INCLUDE_PATHS) -o $@
+
+# 链接
+LINK = $(COMPILER) $(LINK_FLAGS) $(LINK_PATHS) $? -o $(OUTPUT_FILE) $(LINK_LIBRARYS)
+LINKALL = $(COMPILER) $(LINK_FLAGS) $(LINK_PATHS) $?  $(LINK_LIBRARYS)
+
+
+POBJ =  mig_log.o core_interface.o http_formate.o
+OUTPUT_FILE = /var/www/cgi-bin/northsea/prsim
+#############################################################################################################################
+all: clean proc delete-temp-file
+
+proc: newsproc userproc stockproc subscribeproc
+######################news###############################################
+NEWSNAME = news
+NEWSPROC_PATH = /news
+NEWS_OBJECT_PATH = ./obj$(NEWSPROC_PATH)
+OTJERPROC_VERSION = /1
+newsproc:$(NEWSPROC_PATH)/get_news.fcgi $(NEWSPROC_PATH)/set_news.fcgi
+
+$(NEWSPROC_PATH)/get_news.fcgi: $(NEWS_OBJECT_PATH)/$(NEWSNAME)get_news.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(NEWSPROC_PATH)$(OTJERPROC_VERSION)/get_news.fcgi
+
+$(NEWSPROC_PATH)/set_news.fcgi: $(NEWS_OBJECT_PATH)/$(NEWSNAME)set_news.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(NEWSPROC_PATH)$(OTJERPROC_VERSION)/set_news.fcgi
+
+###编译
+
+$(NEWS_OBJECT_PATH)/$(NEWSNAME)get_news.o:
+	$(COMPILE) .$(NEWSPROC_PATH)$(OTJERPROC_VERSION)/get_news/get_news.cc
+
+$(NEWS_OBJECT_PATH)/$(NEWSNAME)set_news.o:
+	$(COMPILE) .$(NEWSPROC_PATH)$(OTJERPROC_VERSION)/set_news/set_news.cc
+	
+
+######################user###############################################
+USERNAME = user_
+USERPROC_PATH = /user
+##./obj/user
+USER_OBJECT_PATH = ./obj$(USERPROC_PATH)
+OTJERPROC_VERSION = /1
+##/user/user_login.fcgi
+userproc:$(USERPROC_PATH)/user_login.fcgi $(USERPROC_PATH)/operate_stock_list.fcgi $(USERPROC_PATH)/get_platform_info.fcgi $(USERPROC_PATH)/hy_follow.fcgi 
+
+$(USERPROC_PATH)/user_login.fcgi: $(USER_OBJECT_PATH)/$(USERNAME)user_login.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(USERPROC_PATH)$(OTJERPROC_VERSION)/user_login.fcgi
+	
+$(USERPROC_PATH)/operate_stock_list.fcgi: $(USER_OBJECT_PATH)/$(USERNAME)operate_stock_list.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(USERPROC_PATH)$(OTJERPROC_VERSION)/operate_stock_list.fcgi
+
+$(USERPROC_PATH)/get_platform_info.fcgi: $(USER_OBJECT_PATH)/$(USERNAME)get_platform_info.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(USERPROC_PATH)$(OTJERPROC_VERSION)/get_platform_info.fcgi
+	
+$(USERPROC_PATH)/hy_follow.fcgi: $(USER_OBJECT_PATH)/$(USERNAME)hy_follow.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(USERPROC_PATH)$(OTJERPROC_VERSION)/hy_follow.fcgi
+	
+### 编译
+
+$(USER_OBJECT_PATH)/$(USERNAME)user_login.o:
+	$(COMPILE) .$(USERPROC_PATH)$(OTJERPROC_VERSION)/user_login/user_login.cc
+
+$(USER_OBJECT_PATH)/$(USERNAME)operate_stock_list.o:
+	$(COMPILE) .$(USERPROC_PATH)$(OTJERPROC_VERSION)/operate_stock_list/operate_stock_list.cc
+
+$(USER_OBJECT_PATH)/$(USERNAME)get_platform_info.o:
+	$(COMPILE) .$(USERPROC_PATH)$(OTJERPROC_VERSION)/get_platform_info/get_platform_info.cc
+
+$(USER_OBJECT_PATH)/$(USERNAME)hy_follow.o:
+	$(COMPILE) .$(USERPROC_PATH)$(OTJERPROC_VERSION)/hy_follow/hy_follow.cc
+	
+	
+######################stock####################################################
+STOCKNAME = stock_
+STOCKPROC_PATH = /stock
+STOCK_OBJECT_PATH = ./obj$(STOCKPROC_PATH)
+OTJERPROC_VERSION = /1
+stockproc:$(STOCKPROC_PATH)/top_twenty_stock.fcgi $(STOCKPROC_PATH)/single_stock.fcgi $(STOCKPROC_PATH)/smart_user.fcgi
+
+$(STOCKPROC_PATH)/top_twenty_stock.fcgi: $(STOCK_OBJECT_PATH)/$(STOCKNAME)top_twenty_stock.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(STOCKPROC_PATH)$(OTJERPROC_VERSION)/top_twenty_stock.fcgi
+
+$(STOCKPROC_PATH)/single_stock.fcgi: $(STOCK_OBJECT_PATH)/$(STOCKNAME)single_stock.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(STOCKPROC_PATH)$(OTJERPROC_VERSION)/single_stock.fcgi
+
+$(STOCKPROC_PATH)/smart_user.fcgi: $(STOCK_OBJECT_PATH)/$(STOCKNAME)smart_user.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(STOCKPROC_PATH)$(OTJERPROC_VERSION)/smart_user.fcgi
+
+###编译
+
+$(STOCK_OBJECT_PATH)/$(STOCKNAME)top_twenty_stock.o:
+	$(COMPILE) .$(STOCKPROC_PATH)$(OTJERPROC_VERSION)/top_twenty_stock/top_twenty_stock.cc
+
+$(STOCK_OBJECT_PATH)/$(STOCKNAME)single_stock.o:
+	$(COMPILE) .$(STOCKPROC_PATH)$(OTJERPROC_VERSION)/single_stock/single_stock.cc
+
+$(STOCK_OBJECT_PATH)/$(STOCKNAME)smart_user.o:
+	$(COMPILE) .$(STOCKPROC_PATH)$(OTJERPROC_VERSION)/smart_user/smart_user.cc
+
+######################stock####################################################
+SUBSCRIBENAME = subscribe_
+SUBSCRIBEPROC_PATH = /subscribe
+SUBSCRIBE_OBJECT_PATH = ./obj$(SUBSCRIBEPROC_PATH)
+OTJERPROC_VERSION = /1
+subscribeproc:$(SUBSCRIBEPROC_PATH)/hot_words_notice.fcgi $(SUBSCRIBEPROC_PATH)/add_subscribe.fcgi $(SUBSCRIBEPROC_PATH)/query_section.fcgi $(SUBSCRIBEPROC_PATH)/query_industry.fcgi $(SUBSCRIBEPROC_PATH)/query_stock.fcgi $(SUBSCRIBEPROC_PATH)/query_top_stock.fcgi $(SUBSCRIBEPROC_PATH)/query_top_word.fcgi $(SUBSCRIBEPROC_PATH)/stock_notice.fcgi $(SUBSCRIBEPROC_PATH)/time_email.fcgi $(SUBSCRIBEPROC_PATH)/delete_subscribe.fcgi
+
+$(SUBSCRIBEPROC_PATH)/hot_words_notice.fcgi: $(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)hot_words_notice.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/hot_words_notice.fcgi
+
+$(SUBSCRIBEPROC_PATH)/add_subscribe.fcgi: $(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)add_subscribe.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/add_subscribe.fcgi
+
+$(SUBSCRIBEPROC_PATH)/query_section.fcgi: $(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)query_section.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/query_section.fcgi
+
+$(SUBSCRIBEPROC_PATH)/query_industry.fcgi: $(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)query_industry.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/query_industry.fcgi
+
+$(SUBSCRIBEPROC_PATH)/query_stock.fcgi: $(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)query_stock.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/query_stock.fcgi
+
+$(SUBSCRIBEPROC_PATH)/query_top_stock.fcgi: $(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)query_top_stock.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/query_top_stock.fcgi
+
+$(SUBSCRIBEPROC_PATH)/query_top_word.fcgi: $(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)query_top_word.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/query_top_word.fcgi
+
+$(SUBSCRIBEPROC_PATH)/stock_notice.fcgi: $(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)stock_notice.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/stock_notice.fcgi
+
+$(SUBSCRIBEPROC_PATH)/time_email.fcgi: $(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)time_email.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/time_email.fcgi
+
+$(SUBSCRIBEPROC_PATH)/delete_subscribe.fcgi: $(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)delete_subscribe.o $(POBJ)
+	$(LINKALL) -o $(OUTPUT_FILE)$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/delete_subscribe.fcgi
+
+###编译
+
+$(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)hot_words_notice.o:
+	$(COMPILE) .$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/hot_words_notice/hot_words_notice.cc
+
+$(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)add_subscribe.o:
+	$(COMPILE) .$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/add_subscribe/add_subscribe.cc
+
+$(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)query_section.o:
+	$(COMPILE) .$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/query_section/query_section.cc
+
+$(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)query_industry.o:
+	$(COMPILE) .$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/query_industry/query_industry.cc
+
+$(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)query_stock.o:
+	$(COMPILE) .$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/query_stock/query_stock.cc
+
+$(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)query_top_stock.o:
+	$(COMPILE) .$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/query_top_stock/query_top_stock.cc
+
+$(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)query_top_word.o:
+	$(COMPILE) .$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/query_top_word/query_top_word.cc
+
+$(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)stock_notice.o:
+	$(COMPILE) .$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/stock_notice/stock_notice.cc
+
+$(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)time_email.o:
+	$(COMPILE) .$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/time_email/time_email.cc
+
+$(SUBSCRIBE_OBJECT_PATH)/$(SUBSCRIBENAME)delete_subscribe.o:
+	$(COMPILE) .$(SUBSCRIBEPROC_PATH)$(OTJERPROC_VERSION)/delete_subscribe/delete_subscribe.cc
+
+clean:
+	find $(OUTPUT_FILE) -type f -name "*.fcgi" | xargs -i rm {}
+	-rm -f ./obj/news/*.o
+	-rm -f ./obj/stock/*.o
+	-rm -f ./obj/user/*.o
+	-rm -f ./obj/subscribe/*.o
+
+delete-temp-file:
+	-rm -f ./*.o
+	-rm -f ./obj/news/*.o
+	-rm -f ./obj/stock/*.o
+	-rm -f ./obj/user/*.o
+	-rm -f ./obj/subscribe/*.o
+
+############public###############################
+mig_log.o:
+	$(COMPILE) $(LIB_DIR)/public/log/mig_log.cc
+
+core_interface.o:
+	$(COMPILE) $(LIB_DIR)/public/comm/core_interface.cc
+	
+http_formate.o:
+	$(COMPILE) $(LIB_DIR)/public/http/http_formate.cc

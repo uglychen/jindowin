@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plugin id="search"
+	name="search"
+	version="1.0.0"
+	provider-name="jiaoyongqing">
+</plugin>

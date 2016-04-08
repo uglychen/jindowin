@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<config>
+  <database>
+     <mysql host ="192.168.1.4" 
+            port ="3306" 
+            user = "root" 
+            pass = "hadoop"  
+            name = "jindowin"/>
+
+  </database> 
+  <cached>
+     <redis host ="222.73.34.96"
+            port ="6390"
+            pass = "7ifW4i@M"
+            name = "1"/>
+         
+     <memcached>
+        <config host = "127.0.0.1" port="11211"/>
+     </memcached>
+  </cached>
+  <queue>
+     <kafka host ="192.168.1.4"
+            port ="9093"/>
+
+  </queue>
+</config>

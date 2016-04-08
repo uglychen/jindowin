@@ -1,0 +1,60 @@
+#!/bin/sh
+
+#------------------------------
+#函数:CheckProcess
+#功能:检测需要重启的进程挂了没有
+#参数:$1 -- 需要检测的进程名称
+#返回:如果没挂返回1，挂数返回0, 没有参数返回2
+#------------------------------
+CheckProcess(){
+  if [ "$1"x = ""x ];
+  then
+    echo "ddd"
+    return 2
+  fi
+  PROCESS_NUM=`ps -ef | grep "$1" | grep -v "grep" | grep -v "shell_restart" | wc -l`
+  if [ $PROCESS_NUM -eq 1 ];
+  then
+    echo "dd"
+    return 1
+  elif [ $PROCESS_NUM -eq 0 ];
+  then
+    echo "d"
+    echo $PROCESS_NUM
+    exec ./send_sms.py
+    return 0
+  else
+    reutrn 3;
+  fi
+}
+
+while :
+do
+  CheckProcess $1
+  Ret=$?
+
+  if [ $Ret -eq 0 ];
+  then
+    exec ./$1 &
+    while :
+    do
+      service httpd restart
+      NUM=`curl "http://192.168.1.4/cgi-bin/northsea/prsim/user/1/operate_stock_list.fcgi?user_id=1&token=g??a?_???&operate_type=3" | grep "Internal Server Error" | wc -l`
+      if [ $NUM -eq 0 ];
+      then
+        break;
+      fi
+      sleep 1
+    done
+  elif [ $Ret -eq 1 ];
+  then
+    echo "process is running"
+  elif [ $Ret -eq 2 ];
+  then
+    echo "没有参数"
+    break;
+  else
+    echo "进程数超过2";
+  fi
+  sleep 1
+done
